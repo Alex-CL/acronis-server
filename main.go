@@ -7,7 +7,7 @@ import (
     "os"
     "sync"
 
-    filesPkg "acronis-server/files"
+    filesPkg "github.com/Alex-CL/acronis-server/utils"
 )
 
 const (
