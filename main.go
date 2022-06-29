@@ -2,22 +2,12 @@ package main
 
 import (
     "encoding/xml"
-    "math"
+    "io/ioutil"
+    "log"
     "net/http"
-    "os"
     "sync"
 
-    filesPkg "github.com/Alex-CL/acronis-server/utils"
-)
-
-const (
-    port = "8080"
-)
-
-var (
-    mutex sync.Mutex
-    index int = math.MaxInt64
-    fileNames []string
+    "acronis-server/config"
 )
 
 type html struct {
@@ -29,11 +19,11 @@ type body struct {
 }
 
 func startServer() {
-    log.Fatal(http.ListenAndServe(":" + port, http.FileServer(http.Dir("./files"))))
+    log.Fatal(http.ListenAndServe(":" + config.Port, http.FileServer(http.Dir("./files"))))
 }
 
 func getFileNames() ([]string, error) {
-    res, err := http.Get("http://localhost:" + port)
+    res, err := http.Get(config.URL + ":" + config.Port)
     if err != nil || res.StatusCode != 200 {
         return []string{}, err
     }
@@ -59,11 +49,6 @@ func getFileNames() ([]string, error) {
 }
 
 func main() {
-    if err := filesPkg.CreateTempFiles(); err != nil {
-        os.Exit(1)
-    }
-
-    defer filesPkg.DeleteTempFiles()
     go startServer()
 
     files, err := getFileNames()
@@ -72,17 +57,16 @@ func main() {
     }
 
     var wg sync.WaitGroup
-
     for i := range files {
         wg.Add(1)
-        go filesPkg.ScanFile(&wg, files[i])
+        go scanFile(&wg, files[i])
     }
 
     wg.Wait()
 
     for i := range fileNames {
         wg.Add(1)
-        go filesPkg.DownloadFile(&wg, fileNames[i])
+        go downloadFile(&wg, fileNames[i])
     }
 
     wg.Wait()

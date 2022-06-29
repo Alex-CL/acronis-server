@@ -1,10 +1,20 @@
-package utils
+package main
 
 import (
-    "fmt"
     "io"
     "io/ioutil"
+    "math"
+    "net/http"
     "os"
+    "sync"
+
+    "acronis-server/config"
+)
+
+var (
+    mutex sync.Mutex
+    index int = math.MaxInt64
+    fileNames []string
 )
 
 type fileContent struct {
@@ -12,17 +22,11 @@ type fileContent struct {
     text string
 }
 
-var contents = []fileContent{
-    fileContent{ text: "---A---" },
-    fileContent{ text: "--A------" },
-    fileContent{ text: "------------" },
-    fileContent{ text: "==A==========" },
-}
 
 func scanFile(wg *sync.WaitGroup, file string) {
     defer wg.Done()
 
-    res, err := http.Get(url + "/" + file)
+    res, err := http.Get(config.URL + ":" + config.Port + "/" + file)
     if err != nil || res.StatusCode != 200 {
         return
     }
@@ -55,13 +59,13 @@ func scanFile(wg *sync.WaitGroup, file string) {
 func downloadFile(wg *sync.WaitGroup, file string) {
     defer wg.Done()
 
-    resp, err := http.Get(url + "/" + file)
+    resp, err := http.Get(config.URL + ":" + config.Port + "/" + file)
     if err != nil {
         return
     }
     defer resp.Body.Close()
 
-    out, err := os.Create("./" + file)
+    out, err := os.CreateTemp("", file)
     if err != nil {
         return
     }
@@ -70,34 +74,4 @@ func downloadFile(wg *sync.WaitGroup, file string) {
     if _, err = io.Copy(out, resp.Body); err != nil {
         return
     }
-}
-
-func createTempFiles() error {
-    for i := range contents {
-    	f, err := os.CreateTemp("", fmt.Sprintf("file%d", i + 1))
-        if err != nil {
-    		return err
-    	}
-        contents[i].file = f.Name()
-
-        if _, err := f.Write([]byte(contents[i].text)); err != nil {
-    		f.Close()
-    		return err
-    	}
-    	if err := f.Close(); err != nil {
-    		return err
-    	}
-    }
-
-    return nil
-}
-
-func deleteTempFiles() error {
-    for i := range contents {
-    	if err := os.Remove(contents[i].file); err != nil {
-    		return err
-    	}
-    }
-
-    return nil
 }
