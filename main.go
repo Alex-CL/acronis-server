@@ -11,7 +11,7 @@ import (
 )
 
 const (
-    url = "http://localhost:8080"
+    port = "8080"
 )
 
 var (
@@ -29,11 +29,11 @@ type body struct {
 }
 
 func startServer() {
-    log.Fatal(http.ListenAndServe(":8080", http.FileServer(http.Dir("./files"))))
+    log.Fatal(http.ListenAndServe(":" + port, http.FileServer(http.Dir("./files"))))
 }
 
 func getFileNames() ([]string, error) {
-    res, err := http.Get(url)
+    res, err := http.Get("http://localhost:" + port)
     if err != nil || res.StatusCode != 200 {
         return []string{}, err
     }
