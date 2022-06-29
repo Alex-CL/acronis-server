@@ -17,12 +17,6 @@ var (
     fileNames []string
 )
 
-type fileContent struct {
-    file string
-    text string
-}
-
-
 func scanFile(wg *sync.WaitGroup, file string) {
     defer wg.Done()
 
